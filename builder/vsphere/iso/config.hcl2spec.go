@@ -48,6 +48,7 @@ type FlatConfig struct {
 	ResourcePool                    *string                                     `mapstructure:"resource_pool" cty:"resource_pool" hcl:"resource_pool"`
 	Datastore                       *string                                     `mapstructure:"datastore" cty:"datastore" hcl:"datastore"`
 	SetHostForDatastoreUploads      *bool                                       `mapstructure:"set_host_for_datastore_uploads" cty:"set_host_for_datastore_uploads" hcl:"set_host_for_datastore_uploads"`
+	SetDRSOverride                  *bool                                       `mapstructure:"set_drs_override" cty:"set_drs_override" hcl:"set_drs_override"`
 	CPUs                            *int32                                      `mapstructure:"CPUs" cty:"CPUs" hcl:"CPUs"`
 	CpuCores                        *int32                                      `mapstructure:"cpu_cores" cty:"cpu_cores" hcl:"cpu_cores"`
 	CPUReservation                  *int64                                      `mapstructure:"CPU_reservation" cty:"CPU_reservation" hcl:"CPU_reservation"`
@@ -196,6 +197,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"resource_pool":                  &hcldec.AttrSpec{Name: "resource_pool", Type: cty.String, Required: false},
 		"datastore":                      &hcldec.AttrSpec{Name: "datastore", Type: cty.String, Required: false},
 		"set_host_for_datastore_uploads": &hcldec.AttrSpec{Name: "set_host_for_datastore_uploads", Type: cty.Bool, Required: false},
+		"set_drs_override":               &hcldec.AttrSpec{Name: "set_drs_override", Type: cty.Bool, Required: false},
 		"CPUs":                           &hcldec.AttrSpec{Name: "CPUs", Type: cty.Number, Required: false},
 		"cpu_cores":                      &hcldec.AttrSpec{Name: "cpu_cores", Type: cty.Number, Required: false},
 		"CPU_reservation":                &hcldec.AttrSpec{Name: "CPU_reservation", Type: cty.Number, Required: false},
