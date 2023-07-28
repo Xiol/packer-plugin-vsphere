@@ -129,6 +129,7 @@ type CreateConfig struct {
 	USBController []string
 	Version       uint // example: 10
 	StorageConfig StorageConfig
+	DRSOverride   bool
 }
 
 func (d *VCenterDriver) NewVM(ref *types.ManagedObjectReference) VirtualMachine {
@@ -274,7 +275,110 @@ func (d *VCenterDriver) CreateVM(config *CreateConfig) (VirtualMachine, error) {
 		return nil, fmt.Errorf("something went wrong when creating the VM")
 	}
 
+	if config.DRSOverride && config.Cluster != "" {
+		err = d.disableDRS(config.Cluster, vmRef)
+		if err == nil {
+			return nil, err
+		}
+	}
+
 	return d.NewVM(&vmRef), nil
+}
+
+func (d *VCenterDriver) disableDRS(configCluster string, vmRef types.ManagedObjectReference) error {
+	cluster, err := d.FindCluster(configCluster)
+	if err != nil {
+		return err
+	}
+
+	config, err := cluster.cluster.Configuration(d.ctx)
+	if err != nil {
+		return err
+	}
+
+	op := types.ArrayUpdateOperationAdd
+	for _, c := range config.DrsVmConfig {
+		if c.Key == vmRef {
+			op = types.ArrayUpdateOperationEdit
+		}
+	}
+
+	spec := &types.ClusterConfigSpecEx{
+		DrsVmConfigSpec: []types.ClusterDrsVmConfigSpec{
+			{
+				ArrayUpdateSpec: types.ArrayUpdateSpec{
+					Operation: op,
+				},
+				Info: &types.ClusterDrsVmConfigInfo{
+					Key:      vmRef,
+					Behavior: types.DrsBehaviorManual,
+				},
+			},
+		},
+	}
+
+	task, err := cluster.cluster.Reconfigure(d.ctx, spec, true)
+	if err != nil {
+		return fmt.Errorf("failed to start DRS task: %s", err)
+	}
+
+	taskInfo, err := task.WaitForResult(d.ctx, nil)
+	if err != nil {
+		return fmt.Errorf("error disabling DRS for VM: %s", err)
+	}
+
+	if taskInfo.Error != nil {
+		return fmt.Errorf("error disabling DRS for VM: %s", err)
+	}
+
+	return nil
+}
+
+func (d *VCenterDriver) CleanupDRSRule(clusterName string, vmRef types.ManagedObjectReference) error {
+	cluster, err := d.FindCluster(clusterName)
+	if err != nil {
+		return err
+	}
+
+	config, err := cluster.cluster.Configuration(d.ctx)
+	if err != nil {
+		return err
+	}
+
+	spec := &types.ClusterConfigSpecEx{}
+	for _, c := range config.DrsVmConfig {
+		if c.Key == vmRef {
+			spec.DrsVmConfigSpec = []types.ClusterDrsVmConfigSpec{
+				{
+					ArrayUpdateSpec: types.ArrayUpdateSpec{
+						Operation: types.ArrayUpdateOperationRemove,
+						RemoveKey: vmRef,
+					},
+				},
+			}
+			break
+		}
+	}
+
+	if spec.DrsVmConfigSpec == nil {
+		return nil
+	}
+
+	task, err := cluster.cluster.Reconfigure(d.ctx, spec, true)
+	if err != nil {
+		return fmt.Errorf("failed to start DRS rule removal task: %s", err)
+	}
+
+	taskInfo, err := task.WaitForResult(d.ctx, nil)
+	if err != nil {
+		return fmt.Errorf("error removing DRS rule for VM: %s", err)
+	}
+
+	if taskInfo.Error != nil {
+		return fmt.Errorf("error removing DRS rule for VM: %s", err)
+	}
+
+	return nil
 }
 
 func (vm *VirtualMachineDriver) Info(params ...string) (*mo.VirtualMachine, error) {

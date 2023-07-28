@@ -47,6 +47,7 @@ type Driver interface {
 	FindContentLibraryItem(libraryId string, name string) (*library.Item, error)
 	FindContentLibraryFileDatastorePath(isoPath string) (string, error)
 	UpdateContentLibraryItem(item *library.Item, name string, description string) error
+	CleanupDRSRule(clusterName string, vmRef types.ManagedObjectReference) error
 	Cleanup() (error, error)
 }
 

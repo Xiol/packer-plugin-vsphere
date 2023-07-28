@@ -125,6 +125,10 @@ func (d *DriverMock) UpdateContentLibraryItem(item *library.Item, name string, d
 	return nil
 }
 
+func (d *DriverMock) CleanupDRSRule(clusterName string, vmRef types.ManagedObjectReference) error {
+	return nil
+}
+
 func (d *DriverMock) Cleanup() (error, error) {
 	return nil, nil
 }

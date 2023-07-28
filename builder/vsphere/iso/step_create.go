@@ -181,6 +181,7 @@ func (s *StepCreateVM) Run(_ context.Context, state multistep.StateBag) multiste
 		NICs:          networkCards,
 		USBController: s.Config.USBController,
 		Version:       s.Config.Version,
+		DRSOverride:   s.Location.SetDRSOverride,
 	})
 	if err != nil {
 		state.Put("error", fmt.Errorf("error creating vm: %v", err))
@@ -188,6 +189,10 @@ func (s *StepCreateVM) Run(_ context.Context, state multistep.StateBag) multiste
 	}
 	if s.Config.Destroy {
 		state.Put("destroy_vm", s.Config.Destroy)
+	}
+	if s.Location.SetDRSOverride {
+		state.Put("cluster", s.Location.Cluster)
+		state.Put("drs_override", s.Location.SetDRSOverride)
 	}
 	state.Put("vm", vm)
 

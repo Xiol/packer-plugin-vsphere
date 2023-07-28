@@ -36,6 +36,10 @@ type LocationConfig struct {
 	// Set this to true if packer should use the host for uploading files
 	// to the datastore. Defaults to false.
 	SetHostForDatastoreUploads bool `mapstructure:"set_host_for_datastore_uploads"`
+	// Set this to true if packer should create a DRS override for the virtual
+	// machine. This will set DRS to 'manual' for the VM, preventing DRS from
+	// migrating the VM during the build.
+	SetDRSOverride bool `mapstructure:"set_drs_override"`
 }
 
 func (c *LocationConfig) Prepare() []error {
